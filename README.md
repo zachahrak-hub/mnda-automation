@@ -1,118 +1,255 @@
 # mnda-automation
 
-Automated MNDA review and routing pipeline for SaaS companies — reviews incoming NDAs against the legal playbook and routes for approval via Slack.
+> Automated MNDA review pipeline. Clone it, run the installer, fill in your API keys — done.
+
+When a counterparty sends an MNDA, this tool automatically:
+- **Parses** the document (PDF, DOCX, or plain text)
+- **Reviews** every clause against your legal playbook using Claude AI
+- **Posts** a summary to Slack with status, deviations, and suggested redlines
+- **Emails** the review back to the sender
+- **Saves** the MNDA to a counterparty-named folder in Google Drive (or locally)
 
 ---
 
-## Overview
+## Get Started in 3 Steps
 
-This repository contains the automation workflow for handling incoming Mutual Non-Disclosure Agreements (MNDAs). When a third party sends an MNDA, the pipeline:
-
-1. **Extracts** counterparty details from the document
-2. **Reviews** every clause against the legal playbook
-3. **Classifies** each clause as GREEN / YELLOW / RED
-4. **Posts** a Slack summary for approval or revision
-5. **Saves** the final document using a standardized filename
-
----
-
-## Repository Structure
-
-```
-mnda-automation/
-├── playbook/
-│   ├── legal_playbook.md   # Clause-by-clause review criteria and standard positions
-│   └── CLAUDE.md           # AI assistant instructions and company legal profile
-├── scripts/
-│   └── review_mnda.py      # Core automation script
-├── reviews/                # Completed review outputs (gitignored in production)
-└── README.md
-```
-
----
-
-## Quick Start
-
-### 1. Install dependencies
+### Step 1 — Clone and install
 
 ```bash
-pip install requests
+git clone https://github.com/zachahrak-hub/mnda-automation.git
+cd mnda-automation
+bash install.sh
 ```
 
-### 2. Set environment variables
+The installer will:
+- Check your Python version (3.9+ required)
+- Create a virtual environment
+- Install all dependencies
+- Create a `.env` file from the template
 
-```bash
-export COMPANY_NAME="Your SaaS Company Inc."
-export COMPANY_EMAIL="nda@yourcompany.com"
-export SLACK_WEBHOOK_URL="https://hooks.slack.com/services/..."
+---
+
+### Step 2 — Fill in your `.env`
+
+Open `.env` in any text editor. At minimum, set these four values:
+
+```env
+COMPANY_NAME="Your Company Inc."
+COMPANY_NOTICE_EMAIL="nda@yourcompany.com"
+ANTHROPIC_API_KEY=sk-ant-...
+SLACK_WEBHOOK_URL=https://hooks.slack.com/services/...
 ```
 
-### 3. Run a review
+> Full configuration reference at the bottom of this file.
+
+---
+
+### Step 3 — Run it
 
 ```bash
-# From a file
-python scripts/review_mnda.py --file path/to/mnda.txt
+# Activate the environment first (do this once per terminal session)
+source .venv/bin/activate
 
-# From text input
-python scripts/review_mnda.py --text "paste mnda content here"
+# Review a single MNDA file
+mnda review --file path/to/nda.pdf
 
-# Without posting to Slack
-python scripts/review_mnda.py --file mnda.txt --no-slack
+# Or use make
+make review FILE=path/to/nda.pdf
 ```
 
 ---
 
-## Playbook
+## All Commands
 
-The `playbook/legal_playbook.md` file defines the standard positions for every key MNDA clause, including:
+```bash
+mnda review --file nda.pdf                        # Review one file
+mnda review --file nda.pdf --reply-to a@co.com   # Review + email result to sender
+mnda review --file nda.pdf --no-slack             # Review without posting to Slack
+mnda watch-email                                   # Start email inbox watcher (runs continuously)
+mnda watch-slack                                   # Start Slack bot listener (runs continuously)
+```
 
-- Mutual disclosure structure
-- Confidentiality survival period (5 years)
-- Governing law and venue
-- Return / deletion obligations
-- Injunctive relief preservation
-- File naming convention
+Or with `make`:
 
-Review findings are classified as:
-
-| Status | Meaning |
-|---|---|
-| GREEN | Compliant with standard position |
-| YELLOW | Deviates — fixable with redlines |
-| RED | Critical issue — escalate to legal |
+```bash
+make review FILE=nda.pdf
+make watch-email
+make watch-slack
+make test
+```
 
 ---
 
-## Slack Integration
+## What You Get After a Review
 
-Configure `SLACK_WEBHOOK_URL` with an incoming webhook from your Slack workspace. After each review the script posts a formatted summary:
-
+### Terminal output
 ```
-MNDA Review — [Counterparty Name]
+Status       : REVISIONS_REQUIRED
+Counterparty : Acme Corp Inc.
+Engine       : claude-ai
+Filename     : 2026-03-08_MNDA_Acme_Corp_Inc_REVISIONS_REQUIRED.docx
+
+Findings (10):
+  OK  [GREEN]  Mutual Structure
+  OK  [GREEN]  Confidentiality Survival
+  !!  [YELLOW] Governing Law — California
+               Document uses Delaware law. Playbook requires California.
+  OK  [GREEN]  Injunctive Relief
+  ...
+```
+
+### Slack message
+```
+MNDA Review — Acme Corp Inc.
+
 Status: Revisions Required
-Key Deviations: ...
-Suggested Filename: 2026-03-08_MNDA_Acme_Corp_RevisionRequired.docx
+Counterparty: Acme Corp Inc.
+
+Key Deviations:
+  [YELLOW] Governing Law — Document uses Delaware law.
+  [YELLOW] Return / Deletion Obligation — Certification requirement missing.
+
+Proposed Redlines:
+  Governing Law: "This Agreement shall be governed by the laws of the State of California."
+  Return / Deletion: "...and certify compliance in writing within 10 business days."
+
+Suggested Filename: 2026-03-08_MNDA_Acme_Corp_REVISIONS_REQUIRED.docx
 Next Step: Review deviations and return redlines to counterparty.
 ```
 
----
-
-## File Naming Convention
-
-All finalized MNDAs are named:
-
+### Saved file
 ```
-YYYY-MM-DD_MNDA_[Counterparty Name]_[Status].docx
+reviews/
+└── Acme_Corp_Inc/
+    ├── 2026-03-08_MNDA_Acme_Corp_Inc_REVISIONS_REQUIRED.docx
+    └── 2026-03-08_MNDA_Acme_Corp_Inc_REVISIONS_REQUIRED_review.txt
 ```
 
 ---
 
-## Contributing
+## Automating Email Intake
 
-1. Update `playbook/legal_playbook.md` to reflect any changes to standard legal positions.
-2. Update `playbook/CLAUDE.md` when company details change.
-3. Keep `scripts/review_mnda.py` in sync with playbook check keys.
+When `mnda watch-email` is running, any email that arrives with "NDA" in the subject line and a PDF or DOCX attachment will automatically trigger the full pipeline and reply to the sender.
+
+**Gmail setup:**
+1. Enable 2-Step Verification on your Google account
+2. Go to [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords) and generate an App Password
+3. Set in `.env`:
+
+```env
+EMAIL_HOST=imap.gmail.com
+EMAIL_USER=legal@yourcompany.com
+EMAIL_PASSWORD=your-app-password
+SMTP_HOST=smtp.gmail.com
+SMTP_USER=legal@yourcompany.com
+SMTP_PASSWORD=your-app-password
+```
 
 ---
 
-*Maintained by Legal Operations.*
+## Automating Slack Intake
+
+When `mnda watch-slack` is running, any PDF or DOCX file uploaded to your Slack workspace triggers the pipeline.
+
+**Setup:**
+1. Go to [api.slack.com/apps](https://api.slack.com/apps) and create a new app
+2. Enable **Socket Mode** and generate an App Token (`xapp-...`)
+3. Add Bot Token scopes: `files:read`, `channels:history`, `im:history`
+4. Install the app to your workspace and copy the Bot Token (`xoxb-...`)
+5. Set in `.env`:
+
+```env
+SLACK_BOT_TOKEN=xoxb-...
+SLACK_APP_TOKEN=xapp-...
+```
+
+---
+
+## Google Drive Storage
+
+Without Google Drive configured, reviewed MNDAs are saved to `./reviews/` locally. To enable Drive:
+
+1. Go to [console.cloud.google.com](https://console.cloud.google.com) and create a project
+2. Enable the **Google Drive API**
+3. Create a **Service Account**, download its JSON key, and save as `credentials/google_service_account.json`
+4. Share your target Drive folder with the service account email address
+5. Copy the folder ID from the URL and set:
+
+```env
+GOOGLE_DRIVE_CREDENTIALS_PATH=credentials/google_service_account.json
+GOOGLE_DRIVE_PARENT_FOLDER_ID=your-folder-id-here
+```
+
+---
+
+## Customizing the Playbook
+
+Edit `playbook/legal_playbook.md` to change your standard legal positions. The review engine in `mnda_automation/review.py` references `PLAYBOOK_CHECKS` — keep those entries in sync with your playbook.
+
+Edit `playbook/CLAUDE.md` to update your company's fixed details (name, address, governing law, etc.).
+
+---
+
+## Configuration Reference
+
+| Variable | Required | Description |
+|---|---|---|
+| `COMPANY_NAME` | Yes | Your legal entity name |
+| `COMPANY_NOTICE_EMAIL` | Yes | Your NDA contact email |
+| `ANTHROPIC_API_KEY` | Yes (AI mode) | Claude API key — [get one here](https://console.anthropic.com) |
+| `ANTHROPIC_MODEL` | No | Default: `claude-sonnet-4-6` |
+| `SLACK_WEBHOOK_URL` | Yes | Incoming webhook for review notifications |
+| `SLACK_BOT_TOKEN` | Slack intake | Bot token (`xoxb-...`) |
+| `SLACK_APP_TOKEN` | Slack intake | App token (`xapp-...`) |
+| `EMAIL_HOST` | Email intake | Default: `imap.gmail.com` |
+| `EMAIL_USER` | Email intake | Your inbox address |
+| `EMAIL_PASSWORD` | Email intake | App password |
+| `SMTP_HOST` | Email replies | Default: `smtp.gmail.com` |
+| `SMTP_USER` | Email replies | Sending address |
+| `SMTP_PASSWORD` | Email replies | App password |
+| `GOOGLE_DRIVE_CREDENTIALS_PATH` | Drive storage | Path to service account JSON |
+| `GOOGLE_DRIVE_PARENT_FOLDER_ID` | Drive storage | Root Drive folder for MNDA storage |
+| `REVIEW_MODE` | No | `claude` / `keywords` / `both` (default: `both`) |
+| `EMAIL_POLL_INTERVAL_SECONDS` | No | Default: `60` |
+
+---
+
+## Project Structure
+
+```
+mnda-automation/
+├── install.sh                      <- Run this first
+├── Makefile                        <- make review / watch-email / watch-slack
+├── run.py                          <- CLI entry point
+├── pyproject.toml                  <- Package definition (pip install .)
+├── requirements.txt
+├── .env.example                    <- Copy to .env and fill in your values
+│
+├── mnda_automation/
+│   ├── config.py                   <- Load settings from .env
+│   ├── parser.py                   <- PDF / DOCX / TXT extraction
+│   ├── review.py                   <- Claude AI + keyword review engine
+│   ├── integrations.py             <- Slack, email, Google Drive, local storage
+│   └── pipeline.py                 <- End-to-end orchestrator
+│
+├── playbook/
+│   ├── legal_playbook.md           <- Your clause-by-clause review criteria
+│   └── CLAUDE.md                   <- Company legal profile for the AI
+│
+└── tests/
+    └── test_review.py              <- pytest test suite
+```
+
+---
+
+## Requirements
+
+- Python 3.9 or higher
+- An [Anthropic API key](https://console.anthropic.com) for Claude AI review
+- A [Slack Incoming Webhook](https://api.slack.com/apps) for notifications
+
+---
+
+## License
+
+MIT — clone it, use it, modify it freely.
