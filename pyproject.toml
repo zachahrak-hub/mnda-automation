@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "mnda-automation"
+version = "1.0.0"
+description = "Automated MNDA review and routing pipeline — email intake, Claude AI review, Slack notifications, Google Drive storage."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.9"
+dependencies = [
+    "anthropic>=0.25.0",
+    "python-dotenv>=1.0.0",
+    "pdfplumber>=0.10.0",
+    "python-docx>=1.1.0",
+    "imapclient>=3.0.1",
+    "slack-sdk>=3.26.0",
+    "google-api-python-client>=2.120.0",
+    "google-auth-httplib2>=0.2.0",
+    "google-auth-oauthlib>=1.2.0",
+    "click>=8.1.7",
+    "requests>=2.31.0",
+]
+
+[project.scripts]
+# After `pip install .` this command becomes available globally:
+#   mnda review --file nda.pdf
+#   mnda watch-email
+#   mnda watch-slack
+mnda = "run:cli"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["mnda_automation*"]
