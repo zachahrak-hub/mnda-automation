@@ -1,0 +1,146 @@
+{
+  "version": "1.0",
+  "description": "MNDA review playbook — structured clause-by-clause criteria for AI-assisted review",
+  "known_standards": [
+    {
+      "name": "Bonterms Mutual NDA",
+      "signals": ["bonterms", "bond terms", "bonterms.com"],
+      "classification": "GREEN",
+      "notes": "Industry-standard balanced mutual NDA. Acceptable as-is in most cases."
+    },
+    {
+      "name": "Common Paper Mutual NDA",
+      "signals": ["common paper", "commonpaper", "commonpaper.com"],
+      "classification": "GREEN",
+      "notes": "Industry-standard balanced mutual NDA. Acceptable as-is in most cases."
+    },
+    {
+      "name": "Common Paper One-Way NDA",
+      "signals": ["common paper", "one-way", "one way", "unilateral"],
+      "classification": "YELLOW",
+      "notes": "One-way NDA from Common Paper — verify direction of obligations before accepting."
+    }
+  ],
+  "checks": [
+    {
+      "id": "mutual_structure",
+      "name": "Mutual Structure",
+      "severity": "RED",
+      "keywords": ["mutual", "both parties", "each party", "reciprocal"],
+      "red_flag_keywords": ["one-way", "unilateral", "disclosing party only"],
+      "guidance": "The NDA must impose confidentiality obligations on both parties equally.",
+      "preferred_language": "Each Party agrees to hold the other Party's Confidential Information in strict confidence.",
+      "redline_suggestion": "Change to mutual obligations on both parties."
+    },
+    {
+      "id": "survival_period",
+      "name": "Survival Period",
+      "severity": "YELLOW",
+      "keywords": ["survive", "survival", "termination", "years", "expiration"],
+      "red_flag_keywords": ["perpetual", "indefinitely", "no expiration"],
+      "guidance": "Preferred survival period is 3-5 years post-termination. Perpetual obligations are RED.",
+      "preferred_language": "The obligations of confidentiality shall survive termination for five (5) years.",
+      "redline_suggestion": "Replace survival period with 5 years post-termination."
+    },
+    {
+      "id": "governing_law",
+      "name": "Governing Law",
+      "severity": "YELLOW",
+      "keywords": ["governing law", "jurisdiction", "governed by", "laws of"],
+      "red_flag_keywords": ["arbitration", "foreign jurisdiction"],
+      "guidance": "Preferred jurisdictions are Delaware or California.",
+      "preferred_language": "This Agreement shall be governed by the laws of the State of Delaware.",
+      "redline_suggestion": "Change governing law to Delaware or California."
+    },
+    {
+      "id": "injunctive_relief",
+      "name": "Injunctive Relief",
+      "severity": "YELLOW",
+      "keywords": ["injunctive relief", "equitable relief", "irreparable harm", "specific performance"],
+      "red_flag_keywords": [],
+      "guidance": "The agreement must include a clause allowing injunctive relief for breach.",
+      "preferred_language": "Each Party acknowledges that any breach may cause irreparable harm entitling the non-breaching Party to seek equitable relief.",
+      "redline_suggestion": "Add injunctive relief clause."
+    },
+    {
+      "id": "standard_of_care",
+      "name": "Standard of Care",
+      "severity": "YELLOW",
+      "keywords": ["reasonable care", "same degree of care", "protect", "safeguard"],
+      "red_flag_keywords": ["absolute", "strict liability", "guarantee"],
+      "guidance": "Standard should be reasonable care. Absolute protection obligations are unacceptable.",
+      "preferred_language": "Each Party shall protect the other's Confidential Information using at least the same degree of care as its own, but no less than reasonable care.",
+      "redline_suggestion": "Replace absolute protection obligation with reasonable care standard."
+    },
+    {
+      "id": "exceptions",
+      "name": "Exceptions to Confidentiality",
+      "severity": "RED",
+      "keywords": ["public domain", "publicly available", "prior knowledge", "independently developed", "legally required", "court order"],
+      "red_flag_keywords": [],
+      "guidance": "Must include standard carve-outs: publicly available, prior knowledge, independent development, legal compulsion.",
+      "preferred_language": "Confidential Information excludes information that: (a) is publicly available; (b) was known prior to disclosure; (c) is independently developed; or (d) is legally required to be disclosed.",
+      "redline_suggestion": "Add standard four-part exceptions clause."
+    },
+    {
+      "id": "return_destroy",
+      "name": "Return or Destruction",
+      "severity": "YELLOW",
+      "keywords": ["return", "destroy", "destruction", "deletion", "delete", "upon request", "upon termination"],
+      "red_flag_keywords": [],
+      "guidance": "Agreement should include obligation to return or destroy confidential information.",
+      "preferred_language": "Upon request or termination, each Party shall return or destroy all Confidential Information and certify such destruction in writing.",
+      "redline_suggestion": "Add return/destruction clause with written certification."
+    },
+    {
+      "id": "no_solicitation",
+      "name": "No-Solicitation Clause",
+      "severity": "YELLOW",
+      "keywords": ["solicit", "solicitation", "recruit", "hire", "employ"],
+      "red_flag_keywords": ["non-solicit", "non-recruitment", "no solicitation"],
+      "guidance": "Company preference is to exclude no-solicitation clauses. If present, propose deletion.",
+      "preferred_language": null,
+      "redline_suggestion": "Delete no-solicitation clause — this should not be included in a mutual NDA."
+    },
+    {
+      "id": "unilateral_check",
+      "name": "Unilateral NDA Detection",
+      "severity": "RED",
+      "keywords": ["disclosing party", "receiving party"],
+      "red_flag_keywords": ["only the receiving party", "solely the receiving party", "receiving party shall not"],
+      "guidance": "If one side is consistently Disclosing Party and other is Receiving Party without mutual obligations, it is a one-way NDA.",
+      "preferred_language": "Each Party may act as both a disclosing and receiving party under this Agreement.",
+      "redline_suggestion": "Convert to mutual NDA structure with obligations on both parties."
+    },
+    {
+      "id": "definition_confidential",
+      "name": "Definition of Confidential Information",
+      "severity": "YELLOW",
+      "keywords": ["confidential information", "proprietary information", "trade secret", "means", "includes"],
+      "red_flag_keywords": ["all information", "any information shared"],
+      "guidance": "There must be a clear, scoped definition. Overly broad definitions create unreasonable obligations.",
+      "preferred_language": "Confidential Information means any non-public information designated as confidential or that reasonably should be understood to be confidential.",
+      "redline_suggestion": "Narrow the definition to specifically designated or reasonably understood non-public information."
+    },
+    {
+      "id": "term_duration",
+      "name": "Agreement Term / Duration",
+      "severity": "YELLOW",
+      "keywords": ["term", "duration", "effective date", "expires", "one year", "two years", "three years"],
+      "red_flag_keywords": ["perpetual", "indefinite", "no end date"],
+      "guidance": "Preferred term is 1-3 years with confidentiality surviving 5 years post-termination.",
+      "preferred_language": "This Agreement shall remain in effect for two (2) years from the Effective Date, unless earlier terminated by either Party upon thirty (30) days written notice.",
+      "redline_suggestion": "Set agreement term to 2 years with 30 days notice termination right."
+    },
+    {
+      "id": "permitted_disclosures",
+      "name": "Permitted Disclosures (Need to Know)",
+      "severity": "YELLOW",
+      "keywords": ["need to know", "employees", "contractors", "advisors", "affiliates", "permitted"],
+      "red_flag_keywords": ["unlimited disclosure", "anyone"],
+      "guidance": "Disclosure must be limited to employees, contractors, advisors with need to know, bound by equivalent obligations.",
+      "preferred_language": "Each Party may disclose to its employees, contractors, and advisors who need to know and are bound by confidentiality obligations at least as protective as this Agreement.",
+      "redline_suggestion": "Limit permitted disclosures to need-to-know personnel bound by equivalent confidentiality obligations."
+    }
+  ]
+}
