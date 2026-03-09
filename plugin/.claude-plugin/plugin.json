@@ -1,0 +1,9 @@
+{
+  "name": "mnda-automation",
+  "version": "1.0.0",
+  "description": "Automated MNDA review, triage, and redline generation against your legal playbook",
+  "author": {
+    "name": "zachahrak-hub"
+  },
+  "keywords": ["nda", "legal", "contracts", "mnda", "review", "redline"]
+}
