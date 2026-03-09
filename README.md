@@ -2,115 +2,74 @@
 
 Automatically review, triage, and redline incoming Mutual Non-Disclosure Agreements — powered by Claude AI.
 
-Two ways to use it:
-
 | | Cowork Plugin | Python Tool |
 |---|---|---|
 | **Who it's for** | Anyone with Claude Cowork | Developers / technical teams |
-| **Setup** | Install plugin → done | Clone repo → configure .env → run |
+| **Setup** | 2 commands → done | Clone → configure .env → run |
 | **How it works** | Upload NDA, say "review this" | Monitors email/Slack automatically |
-| **Requires** | Claude Cowork desktop app | Python 3.9+, API keys |
+| **Requires** | Claude Cowork desktop app | Python 3.9+ |
 
 ---
 
-## Option 1 — Cowork Plugin (Recommended)
+## Option 1 — Cowork Plugin (no coding needed)
 
-### Install in 1 click
+### Install in 2 steps
 
-1. Download **[mnda-automation.plugin](https://github.com/zachahrak-hub/mnda-automation/raw/main/mnda-automation.plugin)**
-2. Open Claude Cowork
-3. Double-click the `.plugin` file — click **Accept**
+**Step 1 — Build the plugin file:**
+```bash
+git clone https://github.com/zachahrak-hub/mnda-automation.git
+cd mnda-automation/plugin && zip -r ../mnda-automation.plugin . && cd ..
+```
 
-That's it. No configuration needed.
+**Step 2 — Install in Cowork:**
+- Double-click **`mnda-automation.plugin`**
+- Click **Accept**
+
+Done. No API keys, no configuration needed.
 
 ### What you can do after installing
 
-**Triage a new NDA (30-second scan):**
-> "Just got this NDA from Acme Corp — quick look?"
-
-**Full clause-by-clause review with redlines:**
-> "Review this MNDA" ← upload the file
-
-**Use the slash command:**
 ```
-/mnda-review path/to/nda.pdf
+"Just got this NDA from Acme — quick look?"       ← 30-second triage
+"Review this MNDA"  (upload the file)              ← Full review + redlines
+/mnda-review path/to/nda.pdf                       ← Slash command
+"Generate a counter-proposal"                      ← When their NDA is unacceptable
+"Format this for Slack"                            ← Slack-ready summary
 ```
-
-**Generate a counter-proposal** (when their NDA is unacceptable):
-> "Generate a counter-proposal using our standard template"
-
-**Get a Slack-ready summary:**
-> "Format this for Slack"
 
 ### What the review covers
 
-12 clauses checked against a built-in legal playbook:
+12 clauses checked against a built-in legal playbook — Mutual Structure, Survival Period (3–5 years preferred), Governing Law (Delaware/California), Injunctive Relief, Standard of Care, Exceptions to Confidentiality (all 4 required), Return or Destruction, No-Solicitation (flag if present), Unilateral NDA Detection, Definition of Confidential Information, Agreement Term, and Permitted Disclosures.
 
-- Mutual Structure
-- Survival Period (3–5 years preferred)
-- Governing Law (Delaware / California)
-- Injunctive Relief
-- Standard of Care
-- Exceptions to Confidentiality (all 4 required)
-- Return or Destruction
-- No-Solicitation Clause (flag if present)
-- Unilateral NDA Detection
-- Definition of Confidential Information
-- Agreement Term / Duration
-- Permitted Disclosures (Need to Know)
-
-**Bonterms and Common Paper MNDAs are auto-approved** — if the document matches a known industry-standard template, it gets classified GREEN immediately.
+**Bonterms and Common Paper MNDAs are auto-approved** — known industry-standard templates get classified GREEN immediately.
 
 ### Customise the playbook
 
-Edit `skills/mnda-review/references/playbook.md` inside the plugin to change clause positions, preferred language, or severity levels for your organisation.
+Edit `plugin/skills/mnda-review/references/playbook.md` to change clause positions, preferred language, or severity levels.
 
 ---
 
 ## Option 2 — Python Automation Tool
 
-For teams that want automatic monitoring of an email inbox or Slack channel.
+For teams that want automatic monitoring of an inbox or Slack channel.
 
-### Get started in 3 steps
-
-**1. Clone the repository**
 ```bash
+# 1. Clone and install
 git clone https://github.com/zachahrak-hub/mnda-automation.git
-cd mnda-automation
-```
+cd mnda-automation && bash install.sh
 
-**2. Install everything**
-```bash
-bash install.sh
-```
-
-**3. Configure**
-```bash
+# 2. Configure
 nano .env   # Set COMPANY_NAME at minimum
+
+# 3. Run
+mnda review path/to/nda.pdf   # Review a file
+mnda watch-email               # Monitor inbox
+mnda watch-slack               # Monitor Slack channel
 ```
 
-### Run it
+Monitors Gmail/Outlook for NDA attachments, reviews with Claude AI (keyword fallback), posts results to Slack, saves to Google Drive or local folder.
 
-```bash
-# Review a single file
-mnda review path/to/nda.pdf
-
-# Monitor your email inbox
-mnda watch-email
-
-# Monitor a Slack channel
-mnda watch-slack
-```
-
-### What it does
-
-- Monitors Gmail / Outlook inbox for NDA attachments (IMAP)
-- Monitors a Slack channel for shared NDA files
-- Reviews with Claude AI or keyword matching (offline fallback)
-- Posts colour-coded results to Slack
-- Saves agreements to Google Drive or local folder, named by counterparty
-
-See the [Setup Guide](MNDA_Automation_Setup_Guide.docx) for full configuration instructions.
+See [MNDA_Automation_Setup_Guide.docx](MNDA_Automation_Setup_Guide.docx) for full setup instructions.
 
 ---
 
@@ -118,18 +77,21 @@ See the [Setup Guide](MNDA_Automation_Setup_Guide.docx) for full configuration i
 
 ```
 mnda-automation/
-├── mnda-automation.plugin        ← Cowork plugin (download this)
-├── mnda_automation/              ← Python package
-│   ├── review.py                 ← Review engine
-│   ├── parser.py                 ← PDF/DOCX/TXT parser
-│   ├── integrations.py           ← Slack, email, Drive
-│   └── pipeline.py               ← End-to-end orchestration
-├── playbook/
-│   └── playbook.json             ← Clause checks + known standards
-├── templates/
-│   └── standard_mnda_template.docx
-├── install.sh                    ← One-command installer
-└── .env.example                  ← Configuration template
+├── plugin/                           ← Cowork plugin source (build this into .plugin)
+│   ├── .claude-plugin/plugin.json
+│   ├── commands/mnda-review.md
+│   ├── skills/mnda-review/           ← Full review + redlines
+│   ├── skills/mnda-triage/           ← Quick 30-second triage
+│   └── CONNECTORS.md
+├── mnda_automation/                  ← Python package
+│   ├── review.py                     ← Review engine
+│   ├── parser.py                     ← PDF/DOCX/TXT parser
+│   ├── integrations.py               ← Slack, email, Google Drive
+│   └── pipeline.py                   ← End-to-end orchestration
+├── playbook/playbook.json            ← Structured clause checks + known standards
+├── templates/standard_mnda_template.docx
+├── install.sh                        ← One-command Python installer
+└── .env.example                      ← Configuration template
 ```
 
 ---
